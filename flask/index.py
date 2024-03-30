@@ -1,7 +1,7 @@
-from flask import Blueprint
+from flask import Blueprint, render_template
 
 index_bp = Blueprint("index_bp", __name__)
 
 @index_bp.route('/')
 def index():
-    return "<h3>Aws Segmentation app.</h3>"
+    return render_template('index.html')
