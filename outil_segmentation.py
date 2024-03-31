@@ -1,5 +1,6 @@
-# System libs
 import os
+import logging
+from PIL import Image
 # Numerical libs
 import numpy as np
 import torch
@@ -10,9 +11,7 @@ import csv
 from mit_semseg.dataset import TestDataset
 from mit_semseg.models import ModelBuilder, SegmentationModule
 from mit_semseg.utils import colorEncode, find_recursive
-import logging
 from mit_semseg.lib.nn import user_scattered_collate
-from PIL import Image
 from mit_semseg.config import cfg
 
 def load_classes():
@@ -116,7 +115,9 @@ def build_net(cfg):
 
     return segmentation_module, loader_test
         
-def segmentation(image_path, logger):
+def segmentation(image_path = "ADE_val_00001519.jpg"):
+    project_path = "api/semantic_segmentation_pytorch/"
+    
     config="config/ade20k-resnet50dilated-ppm_deepsup.yaml"
     img = image_path
     
