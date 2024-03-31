@@ -2,6 +2,7 @@ from flask import Flask
 from typing import List
 import logging
 import traceback
+import os
 
 
 def register_blueprints(app: Flask, list_bp: List):
@@ -9,9 +10,11 @@ def register_blueprints(app: Flask, list_bp: List):
         app.register_blueprint(bp)
 
 def create_app():
-    UPLOAD_FOLDER = './flask/image_to_seg'
+    UPLOAD_FOLDER = os.path.join('static', 'image')
+    RESULT_FOLDER = os.path.join('static', 'result')
     app = Flask(__name__)
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    app.config['RESULT_FOLDER'] = RESULT_FOLDER
     
     import secrets 
     

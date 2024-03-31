@@ -29,6 +29,7 @@ def visualize_result(data, pred, cfg):
     (img, info) = data
     colors, names = load_classes()
     
+    output = []
     # print predictions in descending order
     pred = np.int32(pred)
     pixs = pred.size
@@ -38,17 +39,22 @@ def visualize_result(data, pred, cfg):
         name = names[uniques[idx] + 1]
         ratio = counts[idx] / pixs * 100
         if ratio > 0.1:
-            print("  {}: {:.2f}%".format(name, ratio))
+            pred_ratio = "  {}: {:.2f}%".format(name, ratio)
+            output.append(pred_ratio)
+            # print(pred_ratio)
 
     # colorize prediction
     pred_color = colorEncode(pred, colors).astype(np.uint8)
 
     # aggregate images and save
     im_vis = np.concatenate((img, pred_color), axis=1)
-
-    img_name = info.split('/')[-1]
-    Image.fromarray(im_vis).save(
-        os.path.join(cfg.TEST.result, img_name.replace('.jpg', '.png')))
+    
+    img_name = info.split('\\')[-1]
+    
+    result_path = os.path.join(cfg.TEST.result, img_name.replace('.jpg', '.png'))
+    Image.fromarray(im_vis).save(result_path)
+    
+    return output
     
 def run_net(segmentation_module, loader):
     segmentation_module.eval()
@@ -78,7 +84,7 @@ def run_net(segmentation_module, loader):
             pred = pred.squeeze(0).cpu().numpy()
 
         # visualization
-        visualize_result(
+        return visualize_result(
             (batch_data['img_ori'], batch_data['info']),
             pred,
             cfg
@@ -115,9 +121,7 @@ def build_net(cfg):
 
     return segmentation_module, loader_test
         
-def segmentation(image_path = "ADE_val_00001519.jpg"):
-    project_path = "api/semantic_segmentation_pytorch/"
-    
+def segmentation(image_path):    
     config="config/ade20k-resnet50dilated-ppm_deepsup.yaml"
     img = image_path
     
@@ -147,7 +151,9 @@ def segmentation(image_path = "ADE_val_00001519.jpg"):
         os.makedirs(cfg.TEST.result)
         
     segmentation_module, loader_test = build_net(cfg)
-    run_net(segmentation_module, loader_test)
+    output = run_net(segmentation_module, loader_test)
     
     logger = logging.getLogger(__name__)
     logger.info("Segmentation done.")
+    
+    return output

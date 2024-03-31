@@ -1,5 +1,6 @@
 import os
-from flask import flash, request, redirect, url_for, Blueprint, current_app
+import json
+from flask import flash, request, redirect, url_for, Blueprint, current_app, session
 from werkzeug.utils import secure_filename
 from outil_segmentation import segmentation
 
@@ -29,9 +30,12 @@ def upload_file():
             img_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             file.save(img_path)
             
-            segmentation(img_path)
+            output = segmentation(img_path)
             
-            return redirect(url_for('download_bp.download_file', name=filename))
+            prediction = json.dumps(output)
+            session['prediction'] = prediction
+            
+            return redirect(url_for('download_bp.download_file', name=filename.replace("jpg", "png")))
     return '''
     <!doctype html>
     <title>Upload new File</title>
