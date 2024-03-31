@@ -50,6 +50,7 @@ def visualize_result(data, pred, cfg):
     im_vis = np.concatenate((img, pred_color), axis=1)
     
     img_name = info.split('\\')[-1]
+    img_name = info.split('/')[-1]
     
     result_path = os.path.join(cfg.TEST.result, img_name.replace('.jpg', '.png'))
     Image.fromarray(im_vis).save(result_path)
@@ -116,7 +117,7 @@ def build_net(cfg):
         batch_size=cfg.TEST.batch_size,
         shuffle=False,
         collate_fn=user_scattered_collate,
-        num_workers=5,
+        num_workers=4,
         drop_last=True)
 
     return segmentation_module, loader_test

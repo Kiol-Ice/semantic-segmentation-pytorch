@@ -57,4 +57,4 @@ def configure_logging(app: Flask, log_level: str):
 segmentation_app = create_app()
 
 if __name__ == "__main__":
-    segmentation_app.run(port=8080, host="0.0.0.0", debug=True)
+    segmentation_app.run(port=80, host="0.0.0.0", debug=True)

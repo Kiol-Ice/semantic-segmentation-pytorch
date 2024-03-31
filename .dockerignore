@@ -12,5 +12,7 @@ ADE_val*.jpg
 ADE_val*.png
 
 .idea/
-
+.git
 .venv
+
+LICENSE
