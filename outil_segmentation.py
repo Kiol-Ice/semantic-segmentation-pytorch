@@ -117,7 +117,7 @@ def build_net(cfg):
         batch_size=cfg.TEST.batch_size,
         shuffle=False,
         collate_fn=user_scattered_collate,
-        num_workers=4,
+        num_workers=2,
         drop_last=True)
 
     return segmentation_module, loader_test
