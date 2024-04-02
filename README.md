@@ -136,12 +136,16 @@ IMPORTANT: The base ResNet in our repository is a customized (different from the
 The training is benchmarked on a server with 8 NVIDIA Pascal Titan Xp GPUs (12GB GPU memory), the inference speed is benchmarked a single NVIDIA Pascal Titan Xp GPU, without visualization.
 
 ## Quick start: Test on an image using our trained model 
-1. Launch init.py 
+1. Install python lib
+```bash
+pip install -r requirements.txt
+```
+2. Launch init.py 
 ```bash
 # download model's parameter and test image
 python init.py
 ```
-2. To test on an image or a folder of images (```$PATH_IMG```), you can simply do the following:
+3. To test on an image or a folder of images (```$PATH_IMG```), you can simply do the following:
 ```
 python test.py --imgs $PATH_IMG 
 ```
