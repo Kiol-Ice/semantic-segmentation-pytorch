@@ -1,53 +1,29 @@
-# Semantic Segmentation on MIT ADE20K dataset in PyTorch
+# Image Segmentation on AWS EC2 using [Semantic Segmentation on MIT ADE20K dataset in PyTorch](https://github.com/CSAILVision/semantic-segmentation-pytorch)
 
-This is a PyTorch implementation of semantic segmentation models on MIT ADE20K scene parsing dataset (http://sceneparsing.csail.mit.edu/).
+## Online segmentation application
+This is simple Flask API to consume the segmentation model below. You can use the joined Dockerfile to generate an image and use it as you want.
+
+1. Create image 
+```bash
+docker build -t image_semantic_segmentation .
+```
+
+2. Create container
+```bash
+docker run –name segmentation -p 80:80 image_semantic_segmentation
+```
+
+## Semantic Segmentation on MIT ADE20K dataset in PyTorch
+
+This project use a PyTorch implementation of semantic segmentation models on MIT ADE20K scene parsing dataset (http://sceneparsing.csail.mit.edu/).
 
 ADE20K is the largest open source dataset for semantic segmentation and scene parsing, released by MIT Computer Vision team. Follow the link below to find the repository for our dataset and implementations on Caffe and Torch7:
 https://github.com/CSAILVision/sceneparsing
 
-If you simply want to play with our demo, please try this link: http://scenesegmentation.csail.mit.edu You can upload your own photo and parse it!
-
-[You can also use this colab notebook playground here](https://colab.research.google.com/github/CSAILVision/semantic-segmentation-pytorch/blob/master/notebooks/DemoSegmenter.ipynb) to tinker with the code for segmenting an image.
-
-All pretrained models can be found at:
-http://sceneparsing.csail.mit.edu/model/pytorch
-
-<img src="./teaser/ADE_val_00000278.png" width="900"/>
-<img src="./teaser/ADE_val_00001519.png" width="900"/>
-[From left to right: Test Image, Ground Truth, Predicted Result]
-
 Color encoding of semantic categories can be found here:
 https://docs.google.com/spreadsheets/d/1se8YEtb2detS7OuPE86fXGyD269pMycAWe2mtKUj2W8/edit?usp=sharing
 
-## Updates
-- HRNet model is now supported.
-- We use configuration files to store most options which were in argument parser. The definitions of options are detailed in ```config/defaults.py```.
-- We conform to Pytorch practice in data preprocessing (RGB [0, 1], substract mean, divide std).
-
-
-## Highlights
-
-### Syncronized Batch Normalization on PyTorch
-This module computes the mean and standard-deviation across all devices during training. We empirically find that a reasonable large batch size is important for segmentation. We thank [Jiayuan Mao](http://vccy.xyz/) for his kind contributions, please refer to [Synchronized-BatchNorm-PyTorch](https://github.com/vacancy/Synchronized-BatchNorm-PyTorch) for details.
-
-The implementation is easy to use as:
-- It is pure-python, no C++ extra extension libs.
-- It is completely compatible with PyTorch's implementation. Specifically, it uses unbiased variance to update the moving average, and use sqrt(max(var, eps)) instead of sqrt(var + eps).
-- It is efficient, only 20% to 30% slower than UnsyncBN.
-
-### Dynamic scales of input for training with multiple GPUs 
-For the task of semantic segmentation, it is good to keep aspect ratio of images during training. So we re-implement the `DataParallel` module, and make it support distributing data to multiple GPUs in python dict, so that each gpu can process images of different sizes. At the same time, the dataloader also operates differently. 
-
-<sup>*Now the batch size of a dataloader always equals to the number of GPUs*, each element will be sent to a GPU. It is also compatible with multi-processing. Note that the file index for the multi-processing dataloader is stored on the master process, which is in contradict to our goal that each worker maintains its own file list. So we use a trick that although the master process still gives dataloader an index for `__getitem__` function, we just ignore such request and send a random batch dict. Also, *the multiple workers forked by the dataloader all have the same seed*, you will find that multiple workers will yield exactly the same data, if we use the above-mentioned trick directly. Therefore, we add one line of code which sets the defaut seed for `numpy.random` before activating multiple worker in dataloader.</sup>
-
-### State-of-the-Art models
-- **PSPNet** is scene parsing network that aggregates global representation with Pyramid Pooling Module (PPM). It is the winner model of ILSVRC'16 MIT Scene Parsing Challenge. Please refer to [https://arxiv.org/abs/1612.01105](https://arxiv.org/abs/1612.01105) for details.
-- **UPerNet** is a model based on Feature Pyramid Network (FPN) and Pyramid Pooling Module (PPM). It doesn't need dilated convolution, an operator that is time-and-memory consuming. *Without bells and whistles*, it is comparable or even better compared with PSPNet, while requiring much shorter training time and less GPU memory. Please refer to [https://arxiv.org/abs/1807.10221](https://arxiv.org/abs/1807.10221) for details.
-- **HRNet** is a recently proposed model that retains high resolution representations throughout the model, without the traditional bottleneck design. It achieves the SOTA performance on a series of pixel labeling tasks. Please refer to [https://arxiv.org/abs/1904.04514](https://arxiv.org/abs/1904.04514) for details.
-
-
-## Supported models
-We split our models into encoder and decoder, where encoders are usually modified directly from classification networks, and decoders consist of final convolutions and upsampling. We have provided some pre-configured models in the ```config``` folder.
+### Model description
 
 Encoder:
 - MobileNetV2dilated
@@ -63,7 +39,7 @@ Decoder:
 - PPM_deepsup (PPM + deep supervision trick)
 - UPerNet (Pyramid Pooling + FPN head, see [UperNet](https://arxiv.org/abs/1807.10221) for details.)
 
-## Performance:
+### Model performance:
 IMPORTANT: The base ResNet in our repository is a customized (different from the one in torchvision). The base models will be automatically downloaded when needed.
 
 <table><tbody>
@@ -159,91 +135,18 @@ IMPORTANT: The base ResNet in our repository is a customized (different from the
 
 The training is benchmarked on a server with 8 NVIDIA Pascal Titan Xp GPUs (12GB GPU memory), the inference speed is benchmarked a single NVIDIA Pascal Titan Xp GPU, without visualization.
 
-## Environment
-The code is developed under the following configurations.
-- Hardware: >=4 GPUs for training, >=1 GPU for testing (set ```[--gpus GPUS]``` accordingly)
-- Software: Ubuntu 16.04.3 LTS, ***CUDA>=8.0, Python>=3.5, PyTorch>=0.4.0***
-- Dependencies: numpy, scipy, opencv, yacs, tqdm
-
 ## Quick start: Test on an image using our trained model 
-1. Here is a simple demo to do inference on a single image:
+1. Launch init.py 
 ```bash
-chmod +x demo_test.sh
-./demo_test.sh
+# download model's parameter and test image
+python init.py
 ```
-This script downloads a trained model (ResNet50dilated + PPM_deepsup) and a test image, runs the test script, and saves predicted segmentation (.png) to the working directory.
-
 2. To test on an image or a folder of images (```$PATH_IMG```), you can simply do the following:
 ```
-python3 -u test.py --imgs $PATH_IMG --gpu $GPU --cfg $CFG
+python test.py --imgs $PATH_IMG 
 ```
 
-## Training
-1. Download the ADE20K scene parsing dataset:
-```bash
-chmod +x download_ADE20K.sh
-./download_ADE20K.sh
-```
-2. Train a model by selecting the GPUs (```$GPUS```) and configuration file (```$CFG```) to use. During training, checkpoints by default are saved in folder ```ckpt```.
-```bash
-python3 train.py --gpus $GPUS --cfg $CFG 
-```
-- To choose which gpus to use, you can either do ```--gpus 0-7```, or ```--gpus 0,2,4,6```.
-
-For example, you can start with our provided configurations: 
-
-* Train MobileNetV2dilated + C1_deepsup
-```bash
-python3 train.py --gpus GPUS --cfg config/ade20k-mobilenetv2dilated-c1_deepsup.yaml
-```
-
-* Train ResNet50dilated + PPM_deepsup
-```bash
-python3 train.py --gpus GPUS --cfg config/ade20k-resnet50dilated-ppm_deepsup.yaml
-```
-
-* Train UPerNet101
-```bash
-python3 train.py --gpus GPUS --cfg config/ade20k-resnet101-upernet.yaml
-```
-
-3. You can also override options in commandline, for example  ```python3 train.py TRAIN.num_epoch 10 ```.
-
-
-## Evaluation
-1. Evaluate a trained model on the validation set. Add ```VAL.visualize True``` in argument to output visualizations as shown in teaser.
-
-For example:
-
-* Evaluate MobileNetV2dilated + C1_deepsup
-```bash
-python3 eval_multipro.py --gpus GPUS --cfg config/ade20k-mobilenetv2dilated-c1_deepsup.yaml
-```
-
-* Evaluate ResNet50dilated + PPM_deepsup
-```bash
-python3 eval_multipro.py --gpus GPUS --cfg config/ade20k-resnet50dilated-ppm_deepsup.yaml
-```
-
-* Evaluate UPerNet101
-```bash
-python3 eval_multipro.py --gpus GPUS --cfg config/ade20k-resnet101-upernet.yaml
-```
-
-## Integration with other projects
-This library can be installed via `pip` to easily integrate with another codebase
-```bash
-pip install git+https://github.com/CSAILVision/semantic-segmentation-pytorch.git@master
-```
-
-Now this library can easily be consumed programmatically. For example
-```python
-from mit_semseg.config import cfg
-from mit_semseg.dataset import TestDataset
-from mit_semseg.models import ModelBuilder, SegmentationModule
-```
-
-## Reference
+### Reference
 
 If you find the code or pre-trained models useful, please cite the following papers:
 
